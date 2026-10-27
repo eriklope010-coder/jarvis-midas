@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>JARVIS Midas Gold</title>
+
+  <!-- PWA & iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JARVIS">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* OLED Pure Black & Safe Areas */
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+    }
+
+    body, html {
+      background-color: #000000;
+      color: #ffffff;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Safe Area Padding Containers */
+    .safe-top-padding {
+      padding-top: max(var(--sat), 16px);
+    }
+    
+    .safe-bottom-padding {
+      padding-bottom: max(var(--sab), 20px);
+    }
+
+    /* Canvas styling */
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    /* Custom Hide Scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Midas Glow Effects */
+    .gold-glow {
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+    }
+    .gold-glow-lg {
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+    }
+    
+    .gold-text-glow {
+      text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+    }
+
+    /* Pulse animation for call mode */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.03); }
+    }
+    .animate-subtle-pulse {
+      animation: subtlePulse 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-black text-white relative flex flex-col justify-between h-screen w-screen overflow-hidden">
+
+  <!-- ================= CANVAS BACKGROUND & ORB ================= -->
+  <!-- Absolute layer positioned cleanly behind all controls, with zero overlays covering the center -->
+  <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+    <canvas id="orbCanvas"></canvas>
+  </div>
+
+  <!-- ================= TOP DYNAMIC ISLAND SPACER ================= -->
+  <div class="safe-top-padding z-10 w-full flex justify-center items-center pointer-events-none">
+    <!-- Clean space reserved for Dynamic Island / status bar -->
+  </div>
+
+  <!-- ================= MAIN VIEW BOTTOM SECTION ================= -->
+  <main id="mainInterface" class="z-10 w-full flex flex-col items-center gap-5 safe-bottom-padding px-4 transition-all duration-300">
+    
+    <!-- CALL BUTTON (FAB) -->
+    <button id="startCallBtn" onclick="toggleCallMode(true)" class="gold-glow flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 text-black shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer">
+      <i data-lucide="phone-call" class="w-7 h-7 stroke-[2.5]"></i>
+    </button>
+
+    <!-- HORIZONTAL SCROLL APP LAUNCH BAR -->
+    <div class="w-full max-w-md bg-zinc-950/80 backdrop-blur-md rounded-2xl p-3 border border-yellow-500/20 shadow-2xl">
+      <div class="flex items-center gap-4 overflow-x-auto no-scrollbar py-1 px-2">
+        
+        <!-- App: Spotify -->
+        <button onclick="launchApp('spotify://', 'Spotify')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="music" class="w-6 h-6 text-green-500"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Spotify</span>
+        </button>
+
+        <!-- App: WhatsApp -->
+        <button onclick="launchApp('whatsapp://', 'WhatsApp')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="message-circle" class="w-6 h-6 text-emerald-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">WhatsApp</span>
+        </button>
+
+        <!-- App: Instagram -->
+        <button onclick="launchApp('instagram://', 'Instagram')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="instagram" class="w-6 h-6 text-pink-500"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Instagram</span>
+        </button>
+
+        <!-- App: TikTok -->
+        <button onclick="launchApp('snssdk1128://', 'TikTok')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="video" class="w-6 h-6 text-cyan-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">TikTok</span>
+        </button>
+
+        <!-- App: Discord -->
+        <button onclick="launchApp('discord://', 'Discord')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="gamepad-2" class="w-6 h-6 text-indigo-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Discord</span>
+        </button>
+
+        <!-- App: Riot Mobile -->
+        <button onclick="launchApp('riotmobile://', 'Riot Mobile')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="swords" class="w-6 h-6 text-red-500"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Riot</span>
+        </button>
+
+        <!-- App: YouTube -->
+        <button onclick="launchApp('youtube://', 'YouTube')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="youtube" class="w-6 h-6 text-red-600"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">YouTube</span>
+        </button>
+
+        <!-- App: Safari/Google -->
+        <button onclick="launchApp('https://www.google.com', 'Safari')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="compass" class="w-6 h-6 text-amber-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Safari</span>
+        </button>
+
+        <!-- App: Maps -->
+        <button onclick="launchApp('maps://', 'Mapas')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="map-pin" class="w-6 h-6 text-blue-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Mapas</span>
+        </button>
+
+        <!-- App: Photos -->
+        <button onclick="launchApp('photos-redirect://', 'Fotos')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="image" class="w-6 h-6 text-purple-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Fotos</span>
+        </button>
+
+        <!-- App: Messages -->
+        <button onclick="launchApp('sms:', 'Mensajes')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="message-square" class="w-6 h-6 text-green-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Mensajes</span>
+        </button>
+
+        <!-- App: Phone -->
+        <button onclick="launchApp('tel:', 'Teléfono')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="phone" class="w-6 h-6 text-lime-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Teléfono</span>
+        </button>
+
+        <!-- App: Camera -->
+        <button onclick="launchApp('camera://', 'Cámara')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="camera" class="w-6 h-6 text-zinc-300"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Cámara</span>
+        </button>
+
+        <!-- App: Settings -->
+        <button onclick="launchApp('App-Prefs:', 'Ajustes')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="settings" class="w-6 h-6 text-zinc-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Ajustes</span>
+        </button>
+
+        <!-- App: Notes -->
+        <button onclick="launchApp('mobilenotes://', 'Notas')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="file-text" class="w-6 h-6 text-yellow-500"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Notas</span>
+        </button>
+
+        <!-- App: Calculator -->
+        <button onclick="launchApp('calc://', 'Calculadora')" class="flex flex-col items-center gap-1.5 min-w-[58px] group">
+          <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center group-active:scale-90 transition-transform">
+            <i data-lucide="calculator" class="w-6 h-6 text-orange-400"></i>
+          </div>
+          <span class="text-[10px] text-zinc-400 group-hover:text-yellow-400 truncate max-w-[58px]">Calculadora</span>
+        </button>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= FULLSCREEN CALL MODE OVERLAY ================= -->
+  <!-- Absolutely clean view mode: Orb centered, status at bottom, red end-call FAB -->
+  <div id="callOverlay" class="hidden fixed inset-0 z-20 flex flex-col justify-between items-center safe-bottom-padding pointer-events-none">
+    
+    <!-- Top Padding Spacer -->
+    <div class="safe-top-padding w-full"></div>
+
+    <!-- Center Space (Orbe queda completamente visible e interactivo en el canvas de fondo) -->
+    <div class="flex-1 w-full"></div>
+
+    <!-- Call Controls Section -->
+    <div class="z-30 flex flex-col items-center gap-4 pb-4 pointer-events-auto">
+      
+      <!-- Subtle Status Indicator -->
+      <div id="callStatusText" class="text-amber-400/90 text-sm tracking-widest font-medium gold-text-glow animate-subtle-pulse">
+        JARVIS escuchando...
+      </div>
+
+      <!-- End Call Button -->
+      <button onclick="toggleCallMode(false)" class="flex items-center justify-center w-16 h-16 rounded-full bg-red-600 text-white shadow-lg shadow-red-900/40 hover:scale-105 active:scale-95 transition-transform duration-200 cursor-pointer">
+        <i data-lucide="phone-off" class="w-7 h-7 stroke-[2.5]"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    /* -------------------------------------------------------------
+       1. MIDAS GOLD 3D PARTICLE ORB CANVAS
+    ------------------------------------------------------------- */
+    const canvas = document.getElementById('orbCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = 0;
+    let height = 0;
+    let particles = [];
+    const particleCount = 280;
+    let baseRadius = 120;
+    let currentPulseScale = 1;
+    let targetPulseScale = 1;
+    let speechEnergy = 0; // Dynamic reaction scale when speaking/listening
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      baseRadius = Math.min(width, height) * 0.22;
+    }
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        // Spherical Distribution
+        this.theta = Math.random() * Math.PI * 2;
+        this.phi = Math.acos((Math.random() * 2) - 1);
+        this.distance = baseRadius * (0.85 + Math.random() * 0.3);
+        
+        this.speedTheta = (Math.random() - 0.5) * 0.015;
+        this.speedPhi = (Math.random() - 0.5) * 0.015;
+
+        this.size = Math.random() * 2.2 + 0.8;
+        
+        // Midas Gold Palette Colors
+        const colors = [
+          'rgba(255, 215, 0, ',   // Gold
+          'rgba(255, 193, 7, ',   // Amber Gold
+          'rgba(218, 165, 32, ',  // Goldenrod
+          'rgba(255, 223, 0, '    // Bright Yellow Gold
+        ];
+        this.colorBase = colors[Math.floor(Math.random() * colors.length)];
+        this.alpha = Math.random() * 0.7 + 0.3;
+      }
+
+      update() {
+        this.theta += this.speedTheta;
+        this.phi += this.speedPhi;
+
+        // Reactive radius scaling based on audio/speech energy
+        const activeRadius = (baseRadius + speechEnergy * 35) * currentPulseScale;
+
+        // 3D Projection Calculation
+        this.x3d = activeRadius * Math.sin(this.phi) * Math.cos(this.theta);
+        this.y3d = activeRadius * Math.sin(this.phi) * Math.sin(this.theta);
+        this.z3d = activeRadius * Math.cos(this.phi);
+
+        // Slow 3D Rotation along Y and X axis
+        const rotY = Date.now() * 0.0004;
+        const rotX = Date.now() * 0.0002;
+
+        let x1 = this.x3d * Math.cos(rotY) + this.z3d * Math.sin(rotY);
+        let z1 = -this.x3d * Math.sin(rotY) + this.z3d * Math.cos(rotY);
+
+        let y1 = this.y3d * Math.cos(rotX) - z1 * Math.sin(rotX);
+        let z2 = this.y3d * Math.sin(rotX) + z1 * Math.cos(rotX);
+
+        // Perspective camera projection
+        const fov = 350;
+        const scale = fov / (fov + z2 + 200);
+
+        this.projX = (width / 2) + x1 * scale;
+        this.projY = (height / 2) + y1 * scale;
+        this.projSize = this.size * scale * (1 + speechEnergy * 0.5);
+        this.projAlpha = Math.max(0.1, Math.min(1, this.alpha * scale * 1.2));
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.projX, this.projY, this.projSize, 0, Math.PI * 2);
+        ctx.fillStyle = this.colorBase + this.projAlpha + ')';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#FFD700';
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function drawCoreGlow() {
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const glowRadius = (baseRadius * 1.1 + speechEnergy * 20) * currentPulseScale;
+
+      const gradient = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, glowRadius);
+      gradient.addColorStop(0, 'rgba(255, 215, 0, 0.35)');
+      gradient.addColorStop(0.4, 'rgba(218, 165, 32, 0.15)');
+      gradient.addColorStop(0.8, 'rgba(255, 193, 7, 0.04)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function render() {
+      // Clear canvas with OLED pitch black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Smooth pulsing scale lerp
+      currentPulseScale += (targetPulseScale - currentPulseScale) * 0.05;
+
+      // Pulse rhythm effect
+      const time = Date.now() * 0.002;
+      targetPulseScale = 1 + Math.sin(time) * 0.04 + (speechEnergy * 0.15);
+
+      drawCoreGlow();
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      requestAnimationFrame(render);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    initParticles();
+    render();
+
+    /* -------------------------------------------------------------
+       2. APP LAUNCHER & DEEP LINKS
+    ------------------------------------------------------------- */
+    function launchApp(urlScheme, appName) {
+      if (inCallMode) {
+        speakJARVIS(`Abriendo ${appName}, señor.`);
+      }
+      
+      // Attempt iOS Deep Link transition
+      setTimeout(() => {
+        window.location.href = urlScheme;
+      }, 100);
+    }
+
+    /* -------------------------------------------------------------
+       3. CALL MODE & VOICE INTERACTION (WEB SPEECH API)
+    ------------------------------------------------------------- */
+    let inCallMode = false;
+    let recognition = null;
+    let synth = window.speechSynthesis;
+
+    const mainInterface = document.getElementById('mainInterface');
+    const callOverlay = document.getElementById('callOverlay');
+    const callStatusText = document.getElementById('callStatusText');
+
+    // Speech Recognition Setup
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'es-ES';
+
+      recognition.onresult = (event) => {
+        const lastResultIndex = event.results.length - 1;
+        const transcript = event.results[lastResultIndex][0].transcript.toLowerCase().trim();
+        processVoiceCommand(transcript);
+      };
+
+      recognition.onerror = (e) => {
+        console.warn('Speech recognition status:', e.error);
+      };
+
+      recognition.onend = () => {
+        if (inCallMode) {
+          try { recognition.start(); } catch(err){}
+        }
+      };
+    }
+
+    function toggleCallMode(enable) {
+      inCallMode = enable;
+
+      if (enable) {
+        // Transition to Fullscreen Call Mode
+        mainInterface.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => mainInterface.classList.add('hidden'), 200);
+
+        callOverlay.classList.remove('hidden');
+        callOverlay.classList.remove('opacity-0');
+
+        speakJARVIS("A su servicio, señor. ¿Qué desea realizar?");
+
+        if (recognition) {
+          try { recognition.start(); } catch(e){}
+        }
+      } else {
+        // Exit Call Mode
+        if (recognition) {
+          try { recognition.stop(); } catch(e){}
+        }
+        if (synth) synth.cancel();
+
+        callOverlay.classList.add('hidden');
+        mainInterface.classList.remove('hidden');
+        setTimeout(() => mainInterface.classList.remove('opacity-0', 'pointer-events-none'), 10);
+        speechEnergy = 0;
+      }
+    }
+
+    function setStatusText(text) {
+      if (callStatusText) callStatusText.innerText = text;
+    }
+
+    /* Speak Utility with JARVIS Voice Tone */
+    function speakJARVIS(text) {
+      if (!synth) return;
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'es-ES';
+      utterance.rate = 1.0;
+      utterance.pitch = 0.95; // Slightly deeper confident tone
+
+      // Try selecting a natural Spanish voice
+      const voices = synth.getVoices();
+      const preferredVoice = voices.find(v => v.lang.includes('es') && (v.name.includes('Jorge') || v.name.includes('Monica') || v.name.includes('Google') || v.name.includes('Natural')));
+      if (preferredVoice) utterance.voice = preferredVoice;
+
+      utterance.onstart = () => {
+        setStatusText("JARVIS respondiendo...");
+        speechEnergy = 1.2;
+      };
+
+      utterance.onend = () => {
+        setStatusText("JARVIS escuchando...");
+        speechEnergy = 0;
+      };
+
+      synth.speak(utterance);
+    }
+
+    /* -------------------------------------------------------------
+       4. JARVIS VOICE COMMANDS & INTENTS
+    ------------------------------------------------------------- */
+    function processVoiceCommand(cmd) {
+      console.log("Voice Command:", cmd);
+
+      // App Opening Intent: "Jarvis abre [app]" / "Abre [app]"
+      if (cmd.includes('abre') || cmd.includes('abrir') || cmd.includes('lanza')) {
+        if (cmd.includes('spotify')) {
+          speakJARVIS("Iniciando Spotify. Que disfrute de la música.");
+          setTimeout(() => launchApp('spotify://', 'Spotify'), 1200);
+          return;
+        }
+        if (cmd.includes('whatsapp') || cmd.includes('wasap')) {
+          speakJARVIS("Abriendo WhatsApp, señor.");
+          setTimeout(() => launchApp('whatsapp://', 'WhatsApp'), 1200);
+          return;
+        }
+        if (cmd.includes('instagram')) {
+          speakJARVIS("Cargando Instagram.");
+          setTimeout(() => launchApp('instagram://', 'Instagram'), 1200);
+          return;
+        }
+        if (cmd.includes('tiktok')) {
+          speakJARVIS("Desplegando TikTok.");
+          setTimeout(() => launchApp('snssdk1128://', 'TikTok'), 1200);
+          return;
+        }
+        if (cmd.includes('discord')) {
+          speakJARVIS("Conectando a Discord.");
+          setTimeout(() => launchApp('discord://', 'Discord'), 1200);
+          return;
+        }
+        if (cmd.includes('riot') || cmd.includes('lol') || cmd.includes('valorant')) {
+          speakJARVIS("Accediendo a Riot Mobile. Suerte en sus partidas.");
+          setTimeout(() => launchApp('riotmobile://', 'Riot Mobile'), 1200);
+          return;
+        }
+        if (cmd.includes('youtube')) {
+          speakJARVIS("Abriendo YouTube.");
+          setTimeout(() => launchApp('youtube://', 'YouTube'), 1200);
+          return;
+        }
+        if (cmd.includes('mapas') || cmd.includes('maps')) {
+          speakJARVIS("Calculando rutas en Mapas.");
+          setTimeout(() => launchApp('maps://', 'Mapas'), 1200);
+          return;
+        }
+        if (cmd.includes('fotos') || cmd.includes('galería')) {
+          speakJARVIS("Abriendo su galería de fotos.");
+          setTimeout(() => launchApp('photos-redirect://', 'Fotos'), 1200);
+          return;
+        }
+        if (cmd.includes('camara') || cmd.includes('cámara')) {
+          speakJARVIS("Iniciando la cámara.");
+          setTimeout(() => launchApp('camera://', 'Cámara'), 1200);
+          return;
+        }
+        if (cmd.includes('calculadora')) {
+          speakJARVIS("Desplegando la calculadora.");
+          setTimeout(() => launchApp('calc://', 'Calculadora'), 1200);
+          return;
+        }
+      }
+
+      // Calculations Intent
+      if (cmd.includes('cuanto es') || cmd.includes('cuánto es') || cmd.includes('calcula') || cmd.includes('raiz') || cmd.includes('raíz')) {
+        try {
+          let mathQuery = cmd.replace(/jarvis|calcula|cuanto es|cuánto es/g, '').trim();
+          mathQuery = mathQuery.replace(/por/g, '*').replace(/entre/g, '/').replace(/más/g, '+').replace(/menos/g, '-');
+          
+          if (mathQuery.includes('raiz cuadrada de') || mathQuery.includes('raíz cuadrada de')) {
+            let num = parseFloat(mathQuery.replace(/raiz cuadrada de|raíz cuadrada de/g, '').trim());
+            if (!isNaN(num)) {
+              let res = Math.sqrt(num);
+              speakJARVIS(`La raíz cuadrada de ${num} es ${res}.`);
+              return;
+            }
+          }
+
+          let cleanExpr = mathQuery.replace(/[^0-9\+\-\*\/\.\(\)]/g, '');
+          if (cleanExpr) {
+            let result = Function(`'use strict'; return (${cleanExpr})`)();
+            speakJARVIS(`El resultado es ${result}.`);
+            return;
+          }
+        } catch (e) {
+          speakJARVIS("Mis sistemas de cálculo detectaron una expresión compleja. Inténtelo de nuevo.");
+          return;
+        }
+      }
+
+      // Jokes & Humor Intent
+      if (cmd.includes('chiste') || cmd.includes('cuéntame algo gracioso')) {
+        const jokes = [
+          "Le pregunté a la inteligencia artificial si me dominaría en el futuro... me dijo que no me preocupara, que ya paso suficiente tiempo mirando la pantalla.",
+          "Hay 10 tipos de personas en el mundo: las que entienden binario y las que no.",
+          "Señor, mis algoritmos sugieren que su sentido del humor es fascinante, aunque a veces algo impredecible."
+        ];
+        speakJARVIS(jokes[Math.floor(Math.random() * jokes.length)]);
+        return;
+      }
+
+      // Status Intent
+      if (cmd.includes('estado') || cmd.includes('quien eres') || cmd.includes('quién eres')) {
+        speakJARVIS("Soy JARVIS. Todos mis reactores Midas están operando al cien por cien de capacidad.");
+        return;
+      }
+
+      // General fallback polite response
+      speakJARVIS(`Comprendido, señor. Procesando la orden.`);
+    }
+
+    // Preload voices
+    if (synth && synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = () => synth.getVoices();
+    }
+  </script>
+</body>
+</html>
